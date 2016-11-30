@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>图书馆查询系统</title>
+    <script src="{:ADDON_PUBLIC_PATH}/js/vue.js"></script>
+    <link rel="stylesheet" type="text/css" href="{:ADDON_PUBLIC_PATH}/css/weixin.css">
+</head>
+<body>
+    <div id="app">
+        <template v-if="loading_footer">
+            <section class="loading-wrapper">
+                <div class="loading-con">
+                    <div class="spinner">
+                        <div class="spinner-container container1">
+                            <div class="circle1"></div>
+                            <div class="circle2"></div>
+                            <div class="circle3"></div>
+                            <div class="circle4"></div>
+                        </div>
+                        <div class="spinner-container container2">
+                            <div class="circle1"></div>
+                            <div class="circle2"></div>
+                            <div class="circle3"></div>
+                            <div class="circle4"></div>
+                        </div>
+                        <div class="spinner-container container3">
+                            <div class="circle1"></div>
+                            <div class="circle2"></div>
+                            <div class="circle3"></div>
+                            <div class="circle4"></div>
+                        </div>
+                    </div>
+                    <p class="loading-content"> 加载中哦~ </p>
+                </div>
+            </section>
+        </template>
+        <img src="{:ADDON_PUBLIC_PATH}/img/backgroung.png" class="bground">
+        <template v-if="searchChunk">   <!-- 搜索板块 -->
+            <header class="search-header"  v-on:touchstart="changeHeader">
+                <div class="title-select" v-bind:class="{'header-focus': headerCon}">
+                    搜索
+                </div>
+                <div class="title-select" v-bind:class="{'header-focus': !headerCon}">
+                    图书馆信息
+                </div>
+            </header>
+            <main>
+                <!-- 搜索页面 -->
+                <template v-if="headerCon">
+                    <section class="search">
+                        <input type="text" class="input-infor" v-bind:value="inputMessage" placeholder="请输入书名或作者">
+                        <span class="search-con" v-on:touchstart="gotoSearch"></span>
+                    </section>
+                    <!-- 搜索主页 -->
+                    <template v-if="searchCon">
+                        <!-- 热门图书 -->
+                        <nav class="hot-books">
+                            <p class="hot-books-title">
+                                热门图书
+                            </p>
+                            <ul class="book-lists" v-on:touchstart="showBookInfor_hot($index)">
+                                <li v-for="book in books">
+                                    <div class="book-list">
+                                        {{ book.name }}
+                                    </div>
+                                    <template v-if="book.show">
+                                        <div class="showbook-infor">
+                                            <div class="book-infor-con">
+                                                <ul>
+                                                    <p class="searchBook-name">
+                                                        {{ book.name }}
+                                                    </p>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-aut"></div>
+                                                        <div class="book-infor-title">
+                                                            作者
+                                                            <i class="space"></i>
+                                                        </div>
+                                                        <div class="book-infor-state">
+                                                            {{ book.author }}
+                                                        </div>
+                                                    </li>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-num"></div>
+                                                        <div class="book-infor-title">
+                                                            编号
+                                                            <i class="space"></i>
+                                                        </div>
+                                                        <div class="book-infor-state">
+                                                            {{ book.number }}
+                                                        </div>
+                                                    </li>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-pos"></div>
+                                                        <div class="book-infor-title">储藏地</div>
+                                                        <div class="book-infor-state">
+                                                            {{ book.position.lib }}
+                                                            <p class="light">
+                                                                {{ book.position.floor }}
+                                                            </p>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </li>
+                            </ul>
+                        </nav>
+                    </template>
+                    <!-- 搜索结果页面 -->
+                    <template v-else>
+                        <div class="search-res">
+                            <ul class="search-res-lists"  v-on:click="showBookInfor_search">
+                                <li class="search-book-list"  v-for="searchBook in searchBooks"  track-by="$index">
+                                    <span class="book-name">
+                                        {{ searchBook.name }}
+                                    </span>
+                                    <span v-if="searchBook.love" class="love love-focus"  v-on:touchstart="changeLoveState_search($index)"></span>
+                                    <span class="love" v-else  v-on:touchstart="changeLoveState_search($index)"></span>
+                                    <!-- 点击书名，弹出书的信息框 -->
+                                    <template v-if="searchBook.show">
+                                        <div class="showbook-infor">
+                                            <div class="book-infor-con">
+                                                <ul>
+                                                    <p class="searchBook-name">
+                                                        {{ searchBook.name }}
+                                                    </p>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-aut"></div>
+                                                        <div class="book-infor-title">
+                                                            作者
+                                                            <i class="space"></i>
+                                                        </div>
+                                                        <div class="book-infor-state">
+                                                            {{ searchBook.author }}
+                                                        </div>
+                                                    </li>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-num"></div>
+                                                        <div class="book-infor-title">
+                                                            编号
+                                                            <i class="space"></i>
+                                                        </div>
+                                                        <div class="book-infor-state">
+                                                            {{ searchBook.number }}
+                                                        </div>
+                                                    </li>
+                                                    <li class="book-infor">
+                                                        <div class="book-infor-icon book-pos"></div>
+                                                        <div class="book-infor-title">储藏地</div>
+                                                        <div class="book-infor-state">
+                                                            {{ searchBook.position.lib }}
+                                                            <p class="light">
+                                                                {{ searchBook.position.floor }}
+                                                            </p>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </li>
+                                <infinite-loading :on-infinite="onInfinite" :distance="distance" v-if="!searchBookEnd" spinner="circles"></infinite-loading>
+                            </ul>
+                        </div>
+                    </template>
+
+                </template>
+                <!-- 图书馆信息页面 -->
+                <template v-else>
+                    <section class="old-lib">
+                        <div class="lib-title">
+                            <img src="{:ADDON_PUBLIC_PATH}/img/oid_lib.png" class="lib-img">
+                            <p class="lib-name">
+                                老图书馆
+                                T1
+                            </p>
+                        </div>
+                        <div class="lib-main-infor">
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    一楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        科技图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        经济图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        工具书借阅处
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    二楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        社科图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        法学阅览室
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    三楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        文学图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        样本图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        外文图书借阅处
+                                    </li>
+                                    <li class="floor-infor">
+                                        阅览室
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    四楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        阅览室
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </section>
+                    <section class="new-lib">
+                        <div class="lib-title">
+                            <img src="{:ADDON_PUBLIC_PATH}/img/oid_lib.png" class="lib-img">
+                            <p class="lib-name">
+                                数字图书馆
+                                T1
+                            </p>
+                        </div>
+                        <div class="lib-main-infor">
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    一楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        科技图书借阅室
+                                    </li>
+                                    <li class="floor-infor">
+                                        报刊阅览室
+                                    </li>
+                                    <li class="floor-infor warning">
+                                        (禁止携带书籍)
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    二楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        多媒体阅览室
+                                    </li>
+                                    <li class="floor-infor">
+                                        社科图书阅览室
+                                    </li>
+                                    <li class="floor-infor">
+                                        阅览室
+                                    </li>
+                                </ul>
+                            </nav>
+                            <nav class="floors-list">
+                                <span class="floor-name">
+                                    三楼
+                                </span>
+                                <ul>
+                                    <li class="floor-infor">
+                                        阅览室
+                                    </li>
+                                </ul>
+                            </nav>
+                        </div>
+                    </section>
+                </template>
+            </main>
+        </template>
+        <template v-if="newbookChunk">  <!-- 新书板块 -->
+            <nav class="new-book-con">
+                <ul class="newbook_lists">
+                    <li v-for="newbookData in newbookDatas" class="new-book-list">
+                        <span v-if="newbookData.love" class="love love-focus" v-on:touchstart="changeLoveState_newbook($index)"></span>
+                        <span v-else class="love" v-on:touchstart="changeLoveState_newbook($index)"></span>
+                        <ul class="newbook-infor">
+                            <p class="searchBook-name">
+                                {{ newbookData.name }}
+                            </p>
+                            <li class="book-infor">
+                                <div class="book-infor-icon book-aut"></div>
+                                <div class="book-infor-title">
+                                    作者
+                                    <i class="space"></i>
+                                </div>
+                                <div class="book-infor-state">
+                                    {{ newbookData.author }}
+                                </div>
+                            </li>
+                            <li class="book-infor">
+                                <div class="book-infor-icon book-num"></div>
+                                <div class="book-infor-title">
+                                    编号
+                                    <i class="space"></i>
+                                </div>
+                                <div class="book-infor-state">
+                                    {{ newbookData.number }}
+                                </div>
+                            </li>
+                            <li class="book-infor">
+                                <div class="book-infor-icon book-pos"></div>
+                                <div class="book-infor-title">储藏地</div>
+                                <div class="book-infor-state">
+                                    {{ newbookData.position.lib }}
+                                    <span class="light">
+                                        {{ newbookData.position.floor }}
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- 正在加载页面 -->
+                    <infinite-loading :on-infinite="onInfinite" :distance="distance" v-if="!newbookEnd" spinner="circles"></infinite-loading>
+                </ul>
+            </nav>
+        </template>
+        <template v-if="myselfChunk">   <!-- 我的板块 -->
+            <header class="myslef-header">
+                <img class="headphoto" src="{:ADDON_PUBLIC_PATH}/img/headphoto.png">
+                <span class="myself-name">
+                    李立平
+                </span>
+            </header>
+            <main class="myself-main">
+                <template v-for="myselfColumn in myselfColumns">
+                    <section class="myself-column">
+                        <div class="column-head" v-on:click="showMyselfColumn($index)">
+                            <img class="column-head-icon" v-bind:src="myselfColumn.imgSrc">
+                            <span class="column-head-text">
+                                {{myselfColumn.text}}
+                            </span>
+                            <span class="column-head-num">
+                                ({{myselfColumn.number}})
+                            </span>
+                            <img v-if="myselfColumn.show" class="arrow arrow-focus" src="{:ADDON_PUBLIC_PATH}/img/left_arrow.png">
+                            <img v-else class="arrow" src="{:ADDON_PUBLIC_PATH}/img/left_arrow.png">
+                        </div>
+                        <div>
+                            <template v-if="myselfColumn.show" v-for="myselfInfor in myselfColumn.myselfInfors">
+                                <div class="show-column-infor">
+                                    <div class="warnings return-deadline" v-if="$parent.$index === 0">
+                                        {{ myselfInfor.deadline }}归还
+                                    </div>
+                                    <div class="warnings return-deadline" v-if="$parent.$index === 1">
+                                        {{ myselfInfor.deadline }}归还
+                                    </div>
+
+                                    <p class="book-title">
+                                        {{ myselfInfor.name }}
+                                    </p>
+                                    <div class="book-infor">
+                                        <div class="book-infor-title">
+                                            作者
+                                            <i class="space"></i>
+                                        </div>
+                                        <div class="book-infor-state">
+                                            {{ myselfInfor.author }}
+                                        </div>
+                                    </div>
+                                    <div class="book-infor">
+                                        <div class="book-infor-title">
+                                            编号
+                                            <i class="space"></i>
+                                        </div>
+                                        <div class="book-infor-state">
+                                            {{ myselfInfor.number }}
+                                        </div>
+                                    </div>
+                                    <div class="book-infor">
+                                        <div class="book-infor-title">
+                                            储藏地
+                                        </div>
+                                        <div class="book-infor-state">
+                                            {{ myselfInfor.position.lib }}
+                                            {{ myselfInfor.position.floor }}
+                                        </div>
+                                    </div>
+                                    <div class="book-infor" v-if="$parent.$index === 2">
+                                        <div class="book-infor-title">
+                                            欠费
+                                            <i class="space"></i>
+                                        </div>
+                                        <div class="book-infor-state arrearage">
+                                            ￥{{ myselfInfor.arrearage }}
+                                        </div>
+                                    </div>
+                                    <template v-if="$parent.$index === 3">
+                                        <div class="warnings">
+                                            <span class="love love-focus" v-on:touchstart="changeLoveState_store($index)"></span>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </section>
+                </template>
+            </main>
+        </template>     
+        <footer>
+            <template v-for="footer in footerMessage">
+                <template v-if="footer.focus">
+                    <section v-if="footer.focus" class="footer-select footer-focus" v-on:touchstart="changeFooter($index)">
+                        <div class="content-con">
+                            <img v-bind:src="footer.imgFocus" class="footer-img">
+                            <div class="footer-text">
+                               {{ footer.text }}
+                            </div>
+                        </div>
+                    </section>
+                </template>
+                <template v-else>
+                    <section class="footer-select" v-on:touchstart="changeFooter($index)">
+                        <div class="content-con">
+                            <img v-bind:src="footer.img" class="footer-img">
+                            <div class="footer-text">
+                               {{ footer.text }}
+                            </div>
+                        </div>
+                    </section>
+                </template>
+            </template>
+        </footer>
+    </div>
+
+    <script src="{:ADDON_PUBLIC_PATH}/js/weixin.js"></script>
+
+</body>
+</html>
